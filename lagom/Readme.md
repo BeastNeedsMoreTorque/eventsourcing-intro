@@ -10,9 +10,10 @@ Please create a database "league" and initialize it with the file "misc/league.s
 
 ### Starting the application
 
-Once the database is up and running, just do execute
+Once the database is up and running, just execute
 
 ```
+$> cd league
 $> sbt
 > runAll
 ```
