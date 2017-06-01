@@ -13,7 +13,7 @@ bin
 .tmpBin
 .factorypath
 .settings
-.sc
 logs
 
 .idea
+*.sc

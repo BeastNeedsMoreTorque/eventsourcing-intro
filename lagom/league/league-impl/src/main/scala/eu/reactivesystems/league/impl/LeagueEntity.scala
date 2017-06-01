@@ -22,30 +22,24 @@ class LeagueEntity extends PersistentEntity {
     case LeagueState(clubs, games) =>
       Actions().onCommand[AddClub, Done] {
         case (AddClub(club), ctx, state) =>
-          validateAddClub(club, state).fold(message => {
-            ctx.invalidCommand(message)
-            ctx.done
-          },
+          validateAddClub(club, state).fold(message =>
+            rejectCommand(ctx, message),
             event =>
               ctx.thenPersist(event) { _ =>
                 ctx.reply(Done)
               })
       }.onCommand[AddGame, Done] {
         case (AddGame(game), ctx, state) =>
-          validateAddGame(game, state).fold(message => {
-            ctx.invalidCommand(message)
-            ctx.done
-          },
+          validateAddGame(game, state).fold(message =>
+            rejectCommand(ctx, message),
             events =>
               ctx.thenPersistAll(events: _*) { () =>
                 ctx.reply(Done)
               })
       }.onCommand[ChangeGame, Done] {
         case (ChangeGame(game), ctx, state) =>
-          validateChangeGame(game, state).fold(message => {
-            ctx.invalidCommand(message)
-            ctx.done
-          },
+          validateChangeGame(game, state).fold(message =>
+            rejectCommand(ctx, message),
             events =>
               ctx.thenPersistAll(events: _*) { () =>
                 ctx.reply(Done)
@@ -57,12 +51,12 @@ class LeagueEntity extends PersistentEntity {
       }
   }
 
-  def validateAddClub(club: ClubData, state: LeagueState): Either[String, LeagueEvent] =
+  private def validateAddClub(club: ClubData, state: LeagueState): Either[String, LeagueEvent] =
     if (state.clubs(club)) Left(s"Duplicate club $club")
     else if (state.clubs.size == LEAGUE_MAX) Left(s"Max league size $LEAGUE_MAX exceeded")
     else Right(ClubAdded(club))
 
-  def validateAddGame(game: GameData, state: LeagueState): Either[String, Seq[LeagueEvent]] =
+  private def validateAddGame(game: GameData, state: LeagueState): Either[String, Seq[LeagueEvent]] =
     if (state.games(game)) Left(s"Duplicate game $game")
     else {
       val newClubs = Set(game.home, game.away) &~ state.clubs
@@ -72,10 +66,15 @@ class LeagueEntity extends PersistentEntity {
       }
     }
 
-  def validateChangeGame(game: GameData, state: LeagueState): Either[String, Seq[LeagueEvent]] =
+  private def validateChangeGame(game: GameData, state: LeagueState): Either[String, Seq[LeagueEvent]] =
     state.games.find(_ == game)
       .fold[Either[String, Seq[LeagueEvent]]](Left(s"Game $game not found.")
     )(oldGame => Right(Seq(ResultRevoked(oldGame), GameAdded(game))))
+
+  private def rejectCommand(ctx: CommandContext[Done], message: String) = {
+    ctx.invalidCommand(message)
+    ctx.done
+  }
 }
 
 object LeagueEntity {

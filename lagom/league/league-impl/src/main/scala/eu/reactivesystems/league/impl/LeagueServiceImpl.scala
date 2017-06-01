@@ -14,22 +14,16 @@ class LeagueServiceImpl(leagueRegistry: PersistentEntityRegistry) extends League
 
   override def addClub(leagueID: String): ServiceCall[Club, Done] = ServiceCall { club: Club =>
     val ref = leagueRegistry.refFor[LeagueEntity](leagueID)
-
-    // Ask the entity the Hello command.
     ref.ask(AddClub(ClubData(club)))
   }
 
   override def addGame(leagueID: String): ServiceCall[Game, Done] = ServiceCall { game: Game =>
     val ref = leagueRegistry.refFor[LeagueEntity](leagueID)
-
-    // Ask the entity the Hello command.
     ref.ask(AddGame(GameData(game)))
   }
 
   override def changeGame(leagueID: String): ServiceCall[Game, Done] = ServiceCall { game: Game =>
     val ref = leagueRegistry.refFor[LeagueEntity](leagueID)
-
-    // Ask the entity the Hello command.
     ref.ask(ChangeGame(GameData(game)))
   }
 
