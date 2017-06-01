@@ -1,4 +1,4 @@
-# Lagom Persistence
+# Introduction to Event Sourcing and CQRS in Scala
 
 
 The purpose of this repository it to provide minimal examples, illustrating the core principles of Event Sourcing and CQRS, in the Scala language.
