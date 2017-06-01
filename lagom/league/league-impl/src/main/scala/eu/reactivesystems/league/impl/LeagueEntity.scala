@@ -59,7 +59,7 @@ class LeagueEntity extends PersistentEntity {
   private def validateAddGame(game: GameData, state: LeagueState): Either[String, Seq[LeagueEvent]] =
     if (state.games(game)) Left(s"Duplicate game $game")
     else {
-      val newClubs = Set(game.home, game.away) &~ state.clubs
+      val newClubs = Set(game.home, game.away) diff state.clubs
       if ((state.clubs.size + newClubs.size) > LEAGUE_MAX) Left(s"Max league size $LEAGUE_MAX exceeded")
       else {
         Right(newClubs.map(ClubAdded(_)).toVector :+ GameAdded(game))
