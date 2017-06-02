@@ -49,6 +49,7 @@ abstract class LeagueApplication(context: LagomApplicationContext)
   persistentEntityRegistry.register(wire[LeagueEntity])
 
   // Register read side processor
+
   val leagueProjectionProps = wireProps[LeagueProjection]
 
   actorSystem.actorOf(

@@ -47,7 +47,7 @@ class LeagueEntity extends PersistentEntity {
       }.onEvent {
         case (ClubAdded(club), state) => state.copy(clubs = state.clubs + club)
         case (GameAdded(game), state) => state.copy(games = state.games + game)
-        case (ResultRevoked(game), state) => state.copy(games = state.games + game)
+        case (ResultRevoked(game), state) => state.copy(games = state.games - game)
       }
   }
 
