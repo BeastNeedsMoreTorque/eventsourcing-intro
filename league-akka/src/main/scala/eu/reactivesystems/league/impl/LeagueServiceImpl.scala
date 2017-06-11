@@ -13,7 +13,7 @@ object LeagueServiceImpl extends LeagueService {
 
   implicit val system = ActorSystem("league-actorsystem")
   implicit val materializer = ActorMaterializer()
-  import system.dispatcher
+  implicit val executionContext = system.dispatcher
 
   override def addClub(leagueId: String, club: Club): Future[Done] =
     // get sharded instance

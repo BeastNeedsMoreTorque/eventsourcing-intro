@@ -3,7 +3,8 @@ package eu.reactivesystems.league.impl
 import akka.Done
 import akka.actor.Props
 import akka.persistence.{PersistentActor, SnapshotOffer}
-import collection.immutable.Seq
+
+import scala.collection.immutable.Seq
 
 /**
   *
@@ -19,31 +20,40 @@ class LeagueEntity extends PersistentActor {
   override def receiveCommand: Receive = {
     case AddClub(club: ClubData) =>
       validateAddClub(club)
-        .fold(message => sender() ! InvalidCommand(message), event => {
-          persist(event)(event => {
-            updateStateFromEvent(event)
-            saveSnapshotIfNecessary()
-          })
-          sender() ! Done
-        })
+        .fold(
+          message => sender() ! InvalidCommand(message),
+          event => {
+            persist(event)(e => {
+              updateStateFromEvent(e)
+              saveSnapshotIfNecessary()
+            })
+            sender() ! Done
+          }
+        )
     case AddGame(game: GameData) =>
       validateAddGame(game)
-        .fold(message => sender() ! InvalidCommand(message), events => {
-          persistAll(events)(event => {
-            updateStateFromEvent(event)
-            saveSnapshotIfNecessary()
-          })
-          sender() ! Done
-        })
+        .fold(
+          message => sender() ! InvalidCommand(message),
+          events => {
+            persistAll(events)(e => {
+              updateStateFromEvent(e)
+              saveSnapshotIfNecessary()
+            })
+            sender() ! Done
+          }
+        )
     case ChangeGame(game: GameData) =>
       validateChangeGame(game)
-        .fold(message => sender() ! InvalidCommand(message), events => {
-          persistAll(events)(event => {
-            updateStateFromEvent(event)
-            saveSnapshotIfNecessary()
-          })
-          sender() ! Done
-        })
+        .fold(
+          message => sender() ! InvalidCommand(message),
+          events => {
+            persistAll(events)(e => {
+              updateStateFromEvent(e)
+              saveSnapshotIfNecessary()
+            })
+            sender() ! Done
+          }
+        )
   }
 
   override def receiveRecover: Receive =
@@ -54,10 +64,10 @@ class LeagueEntity extends PersistentActor {
   }
 
   private def updateStateFromEvent: Receive = {
-    case (ClubRegistered(club)) =>
+    case ClubRegistered(club) =>
       state = state.copy(clubs = state.clubs + club)
-    case (GamePlayed(game)) => state = state.copy(games = state.games + game)
-    case (ResultRevoked(game)) =>
+    case GamePlayed(game) => state = state.copy(games = state.games + game)
+    case ResultRevoked(game) =>
       state = state.copy(games = state.games - game)
   }
 
@@ -75,7 +85,7 @@ class LeagueEntity extends PersistentActor {
       if ((state.clubs.size + newClubs.size) > LEAGUE_MAX)
         Left(s"Max league size $LEAGUE_MAX exceeded")
       else {
-        Right(newClubs.map(ClubRegistered).toVector :+ GamePlayed(game))
+        Right(newClubs.map(ClubRegistered(_)).toVector :+ GamePlayed(game))
       }
     }
   private def validateChangeGame(
@@ -92,6 +102,7 @@ class LeagueEntity extends PersistentActor {
 }
 
 object LeagueEntity {
+  import spray.json.DefaultJsonProtocol._
   val LEAGUE_MAX = 18
 
   def props: Props = Props[LeagueEntity]
@@ -99,20 +110,31 @@ object LeagueEntity {
   // Commands
   sealed trait LeagueCommand
   case class AddClub(club: ClubData) extends LeagueCommand
-  case class AddGame(game: GameData) extends LeagueCommand
-  case class ChangeGame(game: GameData) extends LeagueCommand
+  object AddClub {
+    implicit val format = jsonFormat1(AddClub.apply)
 
-  // Events TODO tag
-  sealed trait LeagueEvent
-  case class ClubRegistered(club: ClubData) extends LeagueEvent
-  case class GamePlayed(game: GameData) extends LeagueEvent
-  case class ResultRevoked(game: GameData) extends LeagueEvent
+  }
+  case class AddGame(game: GameData) extends LeagueCommand
+  object AddGame {
+    implicit val format = jsonFormat1(AddGame.apply)
+
+  }
+  case class ChangeGame(game: GameData) extends LeagueCommand
+  object ChangeGame {
+    implicit val format = jsonFormat1(ChangeGame.apply)
+  }
 
   // Response can either be "Done" or an error, wrapped in this message
   case class InvalidCommand(message: String)
+  object InvalidCommand {
+    implicit val format = jsonFormat1(InvalidCommand.apply)
+  }
 
   /**
     * The current state held by the persistent entity.
     */
   case class LeagueState(clubs: Set[ClubData], games: Set[GameData])
+  object LeagueState {
+    implicit val format = jsonFormat2(LeagueState.apply)
+  }
 }
